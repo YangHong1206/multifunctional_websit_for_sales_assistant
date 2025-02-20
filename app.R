@@ -1,4 +1,4 @@
-#SixTypeOfClients----
+#overdue clients----
 # Find out more about building applications with Shiny here:
 #
 #    https://shiny.posit.co/
@@ -51,7 +51,13 @@ ui <- fluidPage(
              downloadButton("Overduedownload","下载逾期数据"),
              dataTableOutput("Overdue_Clients_By_Managers"),
              dataTableOutput("overdue_clients")
-    )
+    ),
+    tabPanel("清洗数据Tidy Data",
+             textOutput("tidied_data_comments"),
+             downloadButton("Tidied_data_download","下载清洗后数据"),
+             
+             dataTableOutput("tidied_data")
+             )
     
   )
 )
@@ -89,11 +95,13 @@ options(shiny.maxRequestSize = 50 * 1024^2)
 
 # 自定义函数 ----
 
-fn_drop_parences <- function(clean_parenses_a) {
-  clean_parenses_a <- gsub("\\(.*\\)", "", clean_parenses_a)
-  clean_parenses_a <- gsub("\\（.*\\）", "", clean_parenses_a)
-  return(clean_parenses_a)
+fn_drop_parentheses <- function(clean_parentheses_a)
+{
+  clean_parentheses_a <- gsub("\\(.*\\)", "", clean_parentheses_a)
+  clean_parentheses_a <- gsub("\\（.*\\）", "", clean_parentheses_a)
+  return(clean_parentheses_a)
 }
+
 
 fn_format_ymd <- function(date_a) {
   date_a <- as.Date(date_a, format = "%Y-%m-%d")
@@ -113,11 +121,11 @@ server <- function(input, output, session) {
     
     read.csv(input$HistoryRawdata$datapath) %>%
       mutate(
-        进件日期 = fn_format_ymd(进件日期),
+        进件日期 = ymd(进件日期),
         #合同生效日期 = as.Date(合同生效日期, format = "%Y-%m-%d"),
         合同生效日期 = ymd(合同生效日期),
-        金融经理名称 = fn_drop_parences(金融经理名称),
-        金融顾问名称 = fn_drop_parences(金融顾问名称)
+        金融经理名称 = fn_drop_parentheses(金融经理名称),
+        金融顾问名称 = fn_drop_parentheses(金融顾问名称)
       ) %>%
       arrange(desc(合同生效日期))
   })
@@ -142,7 +150,7 @@ server <- function(input, output, session) {
       )
   })
   
-  #条件筛选----
+  #Function1,六类客户条件筛选----
   #1
   入职2月内新顾问 <- reactive({
     华东全员数据() %>%
@@ -544,7 +552,7 @@ server <- function(input, output, session) {
     )
   })
   
-  #逾期231101至今逾期清单----
+  #Function2,逾期231101至今逾期清单----
   逾期清单 <- reactive({
     rawdata() %>% 
       filter(合同生效日期 >= input$Overduedate & 最新逾期天数 >= input$OverdueDays) %>% 
@@ -571,6 +579,40 @@ server <- function(input, output, session) {
     list(
       "经理逾期数据" = 经理逾期数据(),
       "逾期清单" = 逾期清单()
+    )
+  })
+  
+  
+  #Function3,清洗数据----
+  
+  TidiedRawData <- reactive({
+    rawdata() %>% 
+      mutate(
+        融资金额 = 融资金额 / 10000,
+        进件日期 = ymd(进件日期),
+        合同生效日期 = ymd(合同生效日期),
+        金融经理名称 = fn_drop_parentheses(金融经理名称),
+        金融顾问名称 = fn_drop_parentheses(金融顾问名称),
+        #pad.by.timedd = pad_by_time(合同生效日期, )
+      ) %>% 
+      arrange(desc(合同生效日期))
+    })
+  
+  TidiedChannels <- reactive({
+    channel <- 合作渠道() %>%
+      rename_at('负责员工(金融顾问)', ~'负责员工') %>% 
+      mutate(负责员工 = fn_drop_parentheses(负责员工),
+             业务上级 = fn_drop_parentheses(业务上级),
+             初始生效日期 = ymd(初始生效日期)
+      )
+    
+  })
+  
+  
+  清洗后合并数据 <- reactive({
+    list(
+      "清洗后历史订单明细" = TidiedRawData(),
+      "清洗后渠道列表" = TidiedChannels()
     )
   })
   
@@ -636,6 +678,32 @@ server <- function(input, output, session) {
       writexl::write_xlsx(逾期合并数据(), file)
     }
   )
+  
+  #展示清洗数据表
+  output$tidied_data_comments <- renderText({
+    paste0("1，历史订单明细清洗范围 融资金额以万为单位；",
+    "2,进件日期，合同生效日期修改为年月日日期格式；",
+    "3,单独保留金融经理顾问名字")
+  })
+  
+  
+  output$tidied_data <- renderDataTable({
+    req(rawdata())
+    head(TidiedRawData(), 10)
+    head(TidiedChannels(), 10)
+  })
+  
+  #下载清洗后数据源
+  output$Tidied_data_download <- downloadHandler(
+    filename = function(){
+      paste0("清洗后数据源表",format(Sys.Date(),"%Y%m%d"),".xlsx")
+    },
+    content = function(file){
+      
+      writexl::write_xlsx(清洗后合并数据(), file)
+    }
+  )
+  
   
   
   
