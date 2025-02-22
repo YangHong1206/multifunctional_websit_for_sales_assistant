@@ -1,5 +1,6 @@
 # Introduce 
 This multifunctional website helps you to crush your daily data mission. saving you a bunch of time and saving you from your daily humdrum routine.
+https://twd1r5-shevril.shinyapps.io/SixTypeOfClients/
 
 # Feature
 1. The function of tab panels one and two is to upload the raw data sheet, setting parameters as well.
