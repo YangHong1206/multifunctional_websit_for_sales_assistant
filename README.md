@@ -12,7 +12,7 @@ https://twd1r5-shevril.shinyapps.io/SixTypeOfClients/
 
 1. Feb 18.25 renewing tab panels and setting the theme 
 2. Feb 20.25 Adding the new function- download the cleaned raw data.
-3. Feb 22.25 Page partitioning for splitting by column you selected.
+3. Feb 22.25 Page partitioning for splitting the table by column you selected.
 
 # Getting Help
 
