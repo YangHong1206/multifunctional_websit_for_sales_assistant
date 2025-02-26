@@ -13,6 +13,7 @@ https://twd1r5-shevril.shinyapps.io/SixTypeOfClients/
 1. Feb 18.25 renewing tab panels and setting the theme 
 2. Feb 20.25 Adding the new function- download the cleaned raw data.
 3. Feb 22.25 Page partitioning for splitting the table by column you selected.
+4. Feb 26.25 Page Sales target can be extracted by a format that we monthly upload on the system.
 
 # Getting Help
 
